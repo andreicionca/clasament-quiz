@@ -1,0 +1,206 @@
+/* Stilizare modernă cu temă întunecată pentru aplicația de quiz */
+body {
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #121212;
+  color: #e1e1e1;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #1e1e1e;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+h1 {
+  text-align: center;
+  color: #3a8ff7;
+  margin-bottom: 30px;
+  font-size: 2.2rem;
+  letter-spacing: 0.5px;
+}
+
+.title-config {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.edit-btn {
+  position: absolute;
+  right: 0;
+  background-color: #4a4a4a;
+  padding: 8px 15px;
+  font-size: 0.9em;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.edit-btn:hover {
+  background-color: #5a5a5a;
+  transform: translateY(-2px);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 30px;
+  justify-content: center;
+}
+
+.btn {
+  background-color: #3a8ff7;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  font-size: 1rem;
+}
+
+.btn:hover {
+  background-color: #1a68d1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.table-container {
+  overflow-x: auto;
+  margin-bottom: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  background-color: #252525;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 15px;
+  text-align: center;
+  border: none;
+  border-bottom: 1px solid #333;
+}
+
+th {
+  background-color: #303030;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  color: #3a8ff7;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+}
+
+tr:hover {
+  background-color: #2a2a2a;
+}
+
+/* Butoane colorate */
+.add-row-btn {
+  background-color: #2ecc71;
+}
+
+.add-row-btn:hover {
+  background-color: #27ae60;
+}
+
+.add-round-btn {
+  background-color: #e67e22;
+}
+
+.add-round-btn:hover {
+  background-color: #d35400;
+}
+
+.chart-btn {
+  background-color: #9b59b6;
+}
+
+.chart-btn:hover {
+  background-color: #8e44ad;
+}
+
+.excel-btn {
+  background-color: #27ae60;
+}
+
+.excel-btn:hover {
+  background-color: #219653;
+}
+
+/* Stiluri moderne pentru input-uri */
+input {
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  background-color: #333;
+  border: 2px solid #444;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: #3a8ff7;
+  box-shadow: 0 0 0 2px rgba(58, 143, 247, 0.3);
+}
+
+input[type="number"] {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  height: 50px;
+  width: 80px;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Buton pentru ștergere rând */
+.delete-row {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+
+.delete-row:hover {
+  background-color: #c0392b;
+  transform: scale(1.05);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  input[type="number"] {
+    width: 100%;
+  }
+}
