@@ -12,6 +12,8 @@ let editTitleBtn;
 let addRowBtn;
 let addRoundBtn;
 let generateChartBtn;
+let saveDataBtn;
+let exportCsvBtn;
 let exportExcelBtn;
 let chartCanvas;
 
@@ -43,11 +45,11 @@ function initializeData() {
 // Inițializează datele implicite când nu există date salvate
 function initializeDefaultData() {
   tableData = [
-    { nume: "Echipa 1", puncteTotal: 0, runde: ["", ""] },
-    { nume: "Echipa 2", puncteTotal: 0, runde: ["", ""] },
-    { nume: "Echipa 3", puncteTotal: 0, runde: ["", ""] },
-    { nume: "Echipa 4", puncteTotal: 0, runde: ["", ""] },
-    { nume: "Echipa 5", puncteTotal: 0, runde: ["", ""] },
+    { nume: "Echipa 1", puncteTotal: 0, runde: [0, 0] },
+    { nume: "Echipa 2", puncteTotal: 0, runde: [0, 0] },
+    { nume: "Echipa 3", puncteTotal: 0, runde: [0, 0] },
+    { nume: "Echipa 4", puncteTotal: 0, runde: [0, 0] },
+    { nume: "Echipa 5", puncteTotal: 0, runde: [0, 0] },
   ];
   numberOfRounds = 2;
   quizTitle = "Clasament Quiz";
@@ -63,6 +65,8 @@ document.addEventListener("DOMContentLoaded", function () {
   addRowBtn = document.getElementById("addRowBtn");
   addRoundBtn = document.getElementById("addRoundBtn");
   generateChartBtn = document.getElementById("generateChartBtn");
+  saveDataBtn = document.getElementById("saveDataBtn");
+  exportCsvBtn = document.getElementById("exportCsvBtn");
   exportExcelBtn = document.getElementById("exportExcelBtn");
   chartCanvas = document.getElementById("resultsChart");
 
@@ -103,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const newRow = {
         nume: `Echipa ${nextTeamNumber}`,
         puncteTotal: 0,
-        runde: Array(numberOfRounds).fill(""),
+        runde: Array(numberOfRounds).fill(0),
       };
 
       tableData.push(newRow);
@@ -114,10 +118,9 @@ document.addEventListener("DOMContentLoaded", function () {
   if (addRoundBtn) addRoundBtn.addEventListener("click", addRound);
   if (generateChartBtn)
     generateChartBtn.addEventListener("click", generateChart);
+  if (saveDataBtn) saveDataBtn.addEventListener("click", saveData);
+  if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportToCSV);
   if (exportExcelBtn) exportExcelBtn.addEventListener("click", exportToExcel);
-
-  // Salvăm datele automat când se încarcă aplicația
-  saveData();
 
   // Inițializăm tabelul
   updateTableHeader();
@@ -136,7 +139,7 @@ function reorganizeButtons() {
   const topControls = document.createElement("div");
   topControls.className = "controls top-controls";
 
-  // Creăm un nou container pentru butoanele de jos (Generează Grafic, Export)
+  // Creăm un nou container pentru butoanele de jos (Generează Grafic, Salvează, Export)
   const bottomControls = document.createElement("div");
   bottomControls.className = "controls bottom-controls";
 
@@ -145,6 +148,8 @@ function reorganizeButtons() {
   if (addRoundBtn) topControls.appendChild(addRoundBtn);
 
   if (generateChartBtn) bottomControls.appendChild(generateChartBtn);
+  if (saveDataBtn) bottomControls.appendChild(saveDataBtn);
+  if (exportCsvBtn) bottomControls.appendChild(exportCsvBtn);
   if (exportExcelBtn) bottomControls.appendChild(exportExcelBtn);
 
   // Înlocuim vechiul container cu cele două noi
@@ -259,7 +264,6 @@ function renderTable() {
     inputNume.value = row.nume;
     inputNume.addEventListener("change", (e) => {
       row.nume = e.target.value;
-      saveData(); // Salvăm datele automat când se schimbă numele
     });
     tdNume.appendChild(inputNume);
     tr.appendChild(tdNume);
@@ -275,16 +279,15 @@ function renderTable() {
       const inputRunda = document.createElement("input");
       inputRunda.type = "number";
       inputRunda.min = "0";
-      inputRunda.value = row.runde[i] || "";
+      inputRunda.value = row.runde[i] || 0;
 
       // Asigură-te că avem suficiente runde în array
       if (row.runde.length <= i) {
-        row.runde.push("");
+        row.runde.push(0);
       }
 
       inputRunda.addEventListener("change", (e) => {
-        row.runde[i] =
-          e.target.value === "" ? "" : parseInt(e.target.value) || 0;
+        row.runde[i] = parseInt(e.target.value) || 0;
         updatePuncteTotal(index);
       });
 
@@ -300,7 +303,6 @@ function renderTable() {
     deleteBtn.addEventListener("click", () => {
       tableData.splice(index, 1);
       renderTable();
-      saveData(); // Salvăm datele automat când se șterge un rând
     });
     tdActions.appendChild(deleteBtn);
     tr.appendChild(tdActions);
@@ -313,15 +315,7 @@ function renderTable() {
 // Funcție pentru actualizarea punctajului total
 function updatePuncteTotal(index) {
   const row = tableData[index];
-  row.puncteTotal = row.runde.reduce((sum, score) => {
-    // Convertește string-ul la număr sau folosește 0 dacă string-ul este gol
-    const numScore = score === "" ? 0 : parseInt(score) || 0;
-    return sum + numScore;
-  }, 0);
-
-  // Salvăm datele automat
-  saveData();
-
+  row.puncteTotal = row.runde.reduce((sum, score) => sum + score, 0);
   renderTable();
 }
 
@@ -332,45 +326,17 @@ function addRound() {
   // Asigură-te că toate echipele au noua rundă
   tableData.forEach((row) => {
     if (row.runde.length < numberOfRounds) {
-      row.runde.push("");
+      row.runde.push(0);
     }
   });
 
   // Actualizează antetul și tabelul
   updateTableHeader();
   renderTable();
-
-  // Salvăm datele automat
-  saveData();
-}
-
-// Funcție pentru editarea titlului quizului
-function editTitle() {
-  const newTitle = prompt("Introduceți noul titlu al quizului:", quizTitle);
-  if (newTitle !== null && newTitle.trim() !== "") {
-    quizTitle = newTitle.trim();
-    quizTitleElement.textContent = quizTitle;
-    saveData(); // Salvează și titlul
-  }
-}
-
-// Funcție pentru salvarea datelor în local storage
-function saveData() {
-  const saveObject = {
-    tableData: tableData,
-    numberOfRounds: numberOfRounds,
-    quizTitle: quizTitle,
-  };
-
-  localStorage.setItem("quizData", JSON.stringify(saveObject));
-  // Nu mai afișăm alerta pentru a nu întrerupe utilizatorul
 }
 
 // Funcție pentru generarea graficului
 function generateChart() {
-  // Salvăm datele înainte de a genera graficul
-  saveData();
-
   // Deschide graficul într-o filă nouă
   openChartInNewTab();
 }
@@ -379,10 +345,49 @@ function generateChart() {
 function openChartInNewTab() {
   const newWindow = window.open("", "_blank");
 
-  // Pregătim datele pentru grafic - sortate după puncte total
-  const chartData = [...tableData].sort(
-    (a, b) => b.puncteTotal - a.puncteTotal
-  );
+  // Pregătim datele pentru grafic - folosim ordinea originală a echipelor
+  const chartData = [...tableData];
+
+  // Pregătim header-ul pentru tabel cu runde
+  let roundHeaders = "";
+  for (let i = 0; i < numberOfRounds; i++) {
+    roundHeaders += `<th>Runda ${i + 1}</th>`;
+  }
+
+  // Pregătim rândurile pentru tabel
+  let tableRows = "";
+  chartData.forEach((team, index) => {
+    // Clasa pentru podium - păstrăm conceptul dar folosim datele neordonate
+    let rowClass = "";
+    // Sortăm temporar pentru a găsi poziția echipei în clasament
+    const sortedData = [...tableData].sort(
+      (a, b) => b.puncteTotal - a.puncteTotal
+    );
+    const teamPosition = sortedData.findIndex((t) => t.nume === team.nume);
+
+    if (teamPosition === 0) rowClass = "first-place";
+    else if (teamPosition === 1) rowClass = "second-place";
+    else if (teamPosition === 2) rowClass = "third-place";
+
+    // Poziția în clasament (conform punctajului)
+    const position = teamPosition + 1;
+
+    // Celulele pentru fiecare rundă
+    let roundCells = "";
+    team.runde.forEach((score) => {
+      roundCells += `<td>${score}</td>`;
+    });
+
+    // Construim rândul complet
+    tableRows += `
+            <tr class="${rowClass}">
+                <td>${position}</td>
+                <td>${team.nume}</td>
+                <td>${team.puncteTotal}</td>
+                ${roundCells}
+            </tr>
+        `;
+  });
 
   // Culorile pentru rundele diferite - mai vii și mai contrastante
   const roundColors = [
@@ -411,10 +416,7 @@ function openChartInNewTab() {
   for (let i = 0; i < numberOfRounds; i++) {
     datasetsRounds.push({
       label: `Runda ${i + 1}`,
-      data: chartData.map((item) => {
-        const score = item.runde[i];
-        return score === "" ? 0 : parseInt(score) || 0;
-      }),
+      data: chartData.map((item) => item.runde[i] || 0),
       backgroundColor: roundColors[i % roundColors.length],
       borderColor: roundBorderColors[i % roundBorderColors.length],
       borderWidth: 2, // Bordură mai groasă pentru contrast
@@ -450,11 +452,11 @@ function openChartInNewTab() {
                 font-size: 2.2rem;
                 margin-bottom: 30px;
             }
-            .button-container {
-                margin: 30px auto;
-                text-align: center;
+            h2 {
+                color: #3a8ff7;
+                margin-top: 30px;
             }
-            .action-btn {
+            .print-btn {
                 background-color: #3a8ff7;
                 color: white;
                 border: none;
@@ -462,15 +464,76 @@ function openChartInNewTab() {
                 border-radius: 8px;
                 cursor: pointer;
                 font-weight: bold;
-                margin: 0 10px;
+                margin-top: 20px;
+                margin-right: 10px;
                 transition: all 0.2s ease;
             }
             .download-btn {
                 background-color: #2ecc71;
+                color: white;
+                border: none;
+                padding: 12px 18px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: bold;
+                margin-top: 20px;
+                transition: all 0.2s ease;
             }
-            .action-btn:hover {
+            .print-btn:hover, .download-btn:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            }
+            .podium-indicator {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin-top: 25px;
+                background-color: #252525;
+                padding: 15px;
+                border-radius: 10px;
+                width: fit-content;
+                margin: 25px auto;
+            }
+            .podium-item {
+                display: flex;
+                align-items: center;
+            }
+            .podium-color {
+                width: 20px;
+                height: 20px;
+                margin-right: 10px;
+                border-radius: 4px;
+            }
+            .first-place { background-color: gold; }
+            tr.first-place { background-color: rgba(255, 215, 0, 0.2); }
+            tr.first-place td { font-weight: bold; }
+            .second-place { background-color: silver; }
+            tr.second-place { background-color: rgba(192, 192, 192, 0.2); }
+            .third-place { background-color: #cd7f32; }
+            tr.third-place { background-color: rgba(205, 127, 50, 0.2); }
+            
+            /* Legend culori runde */
+            .rounds-legend {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin-top: 25px;
+                background-color: #252525;
+                padding: 15px;
+                border-radius: 10px;
+                width: fit-content;
+                margin: 25px auto;
+            }
+            .round-item {
+                display: flex;
+                align-items: center;
+            }
+            .round-color {
+                width: 20px;
+                height: 20px;
+                margin-right: 10px;
+                border-radius: 4px;
+                border: 2px solid #121212;
             }
             
             @media print {
@@ -478,27 +541,43 @@ function openChartInNewTab() {
                     background-color: white;
                     color: black;
                 }
-                .chart-container {
+                .chart-container, table {
                     background-color: white;
                     box-shadow: none;
                 }
-                .button-container {
+                .print-btn, .download-btn {
                     display: none;
                 }
+                
             }
         </style>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     </head>
     <body>
-        <h1>${quizTitle}</h1>
         <div class="chart-container">
             <canvas id="chartCanvas"></canvas>
         </div>
         
-        <div class="button-container">
-            <button class="action-btn" onclick="window.print()">Printează</button>
-            <button class="action-btn download-btn" onclick="downloadChart()">Descarcă Imagine</button>
+        <!-- Legendă pentru culorile rundelor -->
+        <div class="rounds-legend">
+            ${datasetsRounds
+              .map(
+                (dataset, index) => `
+                <div class="round-item">
+                    <div class="round-color" style="background-color: ${
+                      roundColors[index % roundColors.length]
+                    }"></div>
+                    <span>Runda ${index + 1}</span>
+                </div>
+            `
+              )
+              .join("")}
         </div>
+        
+     
+        
+        <button class="print-btn" onclick="window.print()">Printează</button>
+        <button class="download-btn" onclick="downloadChart()">Descarcă Imagine</button>
         
         <script>
             // Date pentru grafic
@@ -532,15 +611,11 @@ function openChartInNewTab() {
                             display: true,
                             text: '${quizTitle}',
                             font: {
-                                size: 20,
-                                weight: 'bold'
+                                size: 24
                             },
-                            color: '#e1e1e1',
-                            padding: 20
+                            color: '#e1e1e1'
                         },
                         tooltip: {
-                            mode: 'point',
-                            position: 'nearest',
                             callbacks: {
                                 title: function(tooltipItems) {
                                     return tooltipItems[0].label;
@@ -560,19 +635,11 @@ function openChartInNewTab() {
                             title: {
                                 display: true,
                                 text: 'Puncte',
-                                color: '#e1e1e1',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                }
+                                color: '#e1e1e1'
                             },
                             stacked: true,
                             ticks: {
-                                color: '#e1e1e1',
-                                font: {
-                                    size: 12
-                                },
-                                padding: 10
+                                color: '#e1e1e1'
                             },
                             grid: {
                                 color: 'rgba(255, 255, 255, 0.1)'
@@ -581,14 +648,13 @@ function openChartInNewTab() {
                         x: {
                             ticks: {
                                 autoSkip: false,
-                                maxRotation: 45,
+                                maxRotation: 90,
                                 minRotation: 45,
                                 color: '#e1e1e1',
                                 font: {
-                                    size: 16,  // Mărim fontul pentru nume echipe 
-                                    weight: 'bold'
-                                },
-                                padding: 10
+                                size: 16
+                            }
+
                             },
                             stacked: true,
                             grid: {
@@ -600,24 +666,23 @@ function openChartInNewTab() {
                 plugins: [{
                     afterDraw: function(chart) {
                         const ctx = chart.ctx;
-                        ctx.font = 'bold 14px Arial'; // Font mai mare pentru punctaje
+                        ctx.font = 'bold 12px Arial';
                         ctx.textAlign = 'center';
-                        ctx.fillStyle = '#ffffff';
+                        ctx.fillStyle = '#e1e1e1';
                         
                         // Calculăm totalul pentru fiecare echipă și îl afișăm deasupra bar-ului
                         chartData.forEach((team, index) => {
                             // Calculăm poziția x și y a bar-ului
-                            const meta = chart.getDatasetMeta(numberOfRounds - 1);
+                            const meta = chart.getDatasetMeta(${
+                              numberOfRounds - 1
+                            });
                             const bar = meta.data[index];
                             
-                            // Adăugăm padding pentru a evita ca textul să iasă din grafic
-                            const paddingTop = 25;
-                            
-                            // Afișăm totalul deasupra bar-ului cu padding
+                            // Afișăm totalul deasupra bar-ului
                             ctx.fillText(
                                 team.puncteTotal + ' p', 
                                 bar.x,
-                                bar.y - paddingTop
+                                bar.y - 10
                             );
                         });
                     }
@@ -636,32 +701,87 @@ function openChartInNewTab() {
         </script>
     </body>
     </html>
-  `;
+    `;
 
   newWindow.document.write(html);
   newWindow.document.close();
 }
 
+// Funcție pentru editarea titlului quizului
+function editTitle() {
+  const newTitle = prompt("Introduceți noul titlu al quizului:", quizTitle);
+  if (newTitle !== null && newTitle.trim() !== "") {
+    quizTitle = newTitle.trim();
+    quizTitleElement.textContent = quizTitle;
+    saveData(); // Salvează și titlul
+  }
+}
+
+// Funcție pentru salvarea datelor în local storage
+function saveData() {
+  const saveObject = {
+    tableData: tableData,
+    numberOfRounds: numberOfRounds,
+    quizTitle: quizTitle,
+  };
+
+  localStorage.setItem("quizData", JSON.stringify(saveObject));
+  alert("Datele au fost salvate cu succes!");
+}
+
+// Funcție pentru exportul datelor în format CSV
+function exportToCSV() {
+  // Creează header-ul CSV
+  let csvHeader = "NUME,Puncte Total";
+  for (let i = 0; i < numberOfRounds; i++) {
+    csvHeader += `,Runda ${i + 1}`;
+  }
+  let csvContent = csvHeader + "\n";
+
+  // Adaugă fiecare rând de date
+  tableData.forEach((row) => {
+    let csvRow = `${row.nume},${row.puncteTotal}`;
+    for (let i = 0; i < numberOfRounds; i++) {
+      csvRow += `,${row.runde[i] || 0}`;
+    }
+    csvContent += csvRow + "\n";
+  });
+
+  // Creează un obiect Blob și un link de descărcare
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+
+  // Creează URL pentru blob
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", "rezultate_quiz.csv");
+
+  // Adaugă link-ul la document și declanșează click
+  document.body.appendChild(link);
+  link.click();
+
+  // Curățare
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 // Funcție pentru exportul datelor în format Excel
 function exportToExcel() {
-  // Pregătește datele pentru Excel - sortate după punctaj
-  const sortedData = [...tableData].sort(
-    (a, b) => b.puncteTotal - a.puncteTotal
-  );
+  // Pregătește datele pentru Excel
   const worksheetData = [];
 
   // Adaugă header-ul
-  const header = ["Loc", "NUME", "Puncte Total"];
+  const header = ["NUME", "Puncte Total"];
   for (let i = 0; i < numberOfRounds; i++) {
     header.push(`Runda ${i + 1}`);
   }
   worksheetData.push(header);
 
   // Adaugă datele
-  sortedData.forEach((row, index) => {
-    const excelRow = [index + 1, row.nume, row.puncteTotal];
+  tableData.forEach((row) => {
+    const excelRow = [row.nume, row.puncteTotal];
     for (let i = 0; i < numberOfRounds; i++) {
-      excelRow.push(row.runde[i] === "" ? "" : row.runde[i]);
+      excelRow.push(row.runde[i] || 0);
     }
     worksheetData.push(excelRow);
   });
